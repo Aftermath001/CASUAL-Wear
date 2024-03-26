@@ -5,7 +5,7 @@ import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import { Link } from 'react-router-dom';
 import './Navbar.scss'
-// import Cart from '../Cart/Cart';
+import Cart from '../Cart/Cart';
 
 
 
@@ -61,7 +61,7 @@ const Navbar = () => {
                 </div>
             </div>
         </div>
-        {/* {open && <Cart/>} */}
+        {open && <Cart/>}
     </div>
   )
 }
