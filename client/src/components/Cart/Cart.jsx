@@ -1,50 +1,63 @@
 import React from 'react'
 import './Cart.scss'
 import DeleteIcon from '@mui/icons-material/Delete';
+import { removeItem, resetCart } from "../../redux/cartReducer";
+import { useDispatch } from "react-redux";
+import { useSelector } from "react-redux";
+import {loadStripe} from '@stripe/stripe-js';
+import { makeRequest } from "../../makeRequest";
 
 const Cart = () => {
-
-    const data =[
-        {
-            id: 1,
-            img:"https://everpress.com/blog/wp-content/uploads/2019/09/Keith-Flint.jpg",
-            img2:"https://icecreamcastles.com/cdn/shop/products/2030VPPE-WHT_8f3c4e1a-647b-4524-9adf-e701b921e741.jpg?v=1613219457",
-            title:"Long Sleeve Graphic T-Shirt",
-            desc:"Long Sleeve Graphic T-Shirt. Made in Japan",
-            isNew:true,
-            oldPrice:19,
-            price:12,
-        },
-        {
-            id: 2,
-            img:"https://assets.ajio.com/medias/sys_master/root/20230525/p9Gh/646f040842f9e729d7bff2fa/-473Wx593H-466191357-brown-MODEL.jpg",
-            img2:"https://www.sneakerjeans.com/cdn/shop/products/brown-cargo-pant-mm5714-634827_1200x.jpg?v=1680677490",
-            title:"Brown Cargo Pants",
-            desc:"Brown Cargo Pants. Imported from Paris.",
-            oldPrice:19,
-            price:12,
-        },
-    ]
+    const products = useSelector((state) => state.cart.products);
+    const dispatch = useDispatch();
+    const totalPrice = () => {
+        let total = 0;
+        products.forEach((item) => {
+          total += item.quantity * item.price;
+        });
+        return total.toFixed(2);
+      };
+      const stripePromise = loadStripe(
+        "pk_test_51Oy9ZsHUPYrvAEhhEoH5ceOD3j6LUFmxsffCUwKWFUUAYq2Xkx370B8rmiCCVI0kdXLxVoU0lzmlBpNqAa9Xt2fd00uAThpfUy"
+      );
+      const handlePayment = async () => {
+        try {
+          const stripe = await stripePromise;
+          const res = await makeRequest.post("/orders", {
+            products,
+          });
+          await stripe.redirectToCheckout({
+            sessionId: res.data.stripeSession.id,
+          });
+    
+        } catch (err) {
+          console.log(err);
+        }
+      };
+    
   return (
     <div className='cart'>
         <h1>Products in your Cart</h1>
-        {data?.map(item=>(
+        {products?.map(item=>(
             <div className="item" key={item.id}>
-                <img src={item.img} alt=''/>
+                <img src={process.env.REACT_APP_UPLOAD_URL + item.img} alt="" />
             <div className="details">
                 <h1>{item.title}</h1>
                 <p>{item.desc?.substring(0, 100)}</p>
-                <div className="price">1 x ${item.price} </div>
+                <div className="price">
+                {item.quantity} x ${item.price}
             </div>
-            <DeleteIcon className='delete'/>
+          </div>
+            <DeleteIcon className="delete"
+            onClick={() => dispatch(removeItem(item.id))}/>
             </div>
         ))}
         <div className="total">
             <span>SUBTOTAL</span>
-            <span>$123</span>
+            <span>${totalPrice()}</span>
         </div>
-        <button> PROCEED TO CHECKOUT</button>
-        <span className="reset">Reset Cart</span>
+        <button onClick={handlePayment}> PROCEED TO CHECKOUT</button>
+        <span className="reset" onClick={() => dispatch(resetCart())}>Reset Cart</span>
     </div>
   )
 }
